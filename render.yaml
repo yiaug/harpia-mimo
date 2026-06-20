@@ -16,6 +16,8 @@ services:
       - key: NEXTAUTH_URL
         sync: false
         value: https://harpia.onrender.com
+      - key: AUTH_TRUST_HOST
+        value: "true"
       - key: NODE_ENV
         value: production
   - type: pgsql
