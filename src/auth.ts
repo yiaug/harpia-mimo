@@ -3,13 +3,9 @@ import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import GitHub from 'next-auth/providers/github'
 import bcrypt from 'bcryptjs'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { db } from '@/lib/db'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma) as any,
   session: { strategy: 'jwt' },
   pages: {
     signIn: '/login',
@@ -26,7 +22,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await db.user.findUnique({
           where: { email: credentials.email as string },
         })
 
@@ -52,6 +48,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.displayName || user.username,
           image: user.avatarUrl,
+          role: user.role,
+          status: user.status,
         }
       },
     }),
@@ -68,16 +66,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-      }
-      if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, status: true },
-        })
-        if (dbUser) {
-          token.role = dbUser.role
-          token.status = dbUser.status
-        }
+        token.role = (user as any).role
+        token.status = (user as any).status
       }
       return token
     },
