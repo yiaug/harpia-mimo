@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: npm start
+    startCommand: npx next start
     healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
@@ -20,8 +20,6 @@ services:
         value: "true"
       - key: NODE_ENV
         value: production
-      - key: NODE_OPTIONS
-        value: "--max-old-space-size=400"
   - type: pgsql
     name: harpia-db
     plan: free
