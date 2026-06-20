@@ -1,0 +1,465 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  visitor
+  user
+  verified_member
+  moderator
+  admin
+  super_admin
+}
+
+enum UserStatus {
+  pending
+  active
+  suspended
+  banned
+}
+
+enum BookStatus {
+  to_read
+  reading
+  read
+}
+
+enum PostStatus {
+  draft
+  published
+  removed
+  flagged
+}
+
+enum RoomType {
+  public
+  private
+}
+
+enum SpreadType {
+  single
+  three_cards
+  celtic_cross
+  custom
+}
+
+model User {
+  id            String      @id @default(uuid()) @db.Uuid
+  email         String      @unique @db.VarChar(255)
+  username      String      @unique @db.VarChar(50)
+  passwordHash  String?     @map("password_hash") @db.VarChar(255)
+  displayName   String?     @map("display_name") @db.VarChar(100)
+  avatarUrl     String?     @map("avatar_url") @db.Text
+  bio           String?     @db.Text
+  role          UserRole    @default(user)
+  status        UserStatus  @default(pending)
+  emailVerified Boolean     @default(false) @map("email_verified")
+  lastLoginAt   DateTime?   @map("last_login_at") @db.Timestamptz()
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+
+  books              UserBook[]
+  bookRatings        BookRating[]
+  bookCreations      Book[]              @relation("BookCreator")
+  communityMemberships CommunityMember[]
+  communityCreations   Community[]       @relation("CommunityCreator")
+  posts              Post[]
+  comments           Comment[]
+  votes              Vote[]
+  roomMemberships    RoomMember[]
+  messages           Message[]
+  messageCreations   Room[]              @relation("RoomCreator")
+  voiceCreations     VoiceChannel[]      @relation("VoiceChannelCreator")
+  voiceSessions      VoiceSession[]
+  tarotDraws         TarotDraw[]
+  auditLogs          AuditLog[]
+  accounts           Account[]
+  sessions           Session[]
+  notifications      Notification[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @db.VarChar(100)
+  slug        String     @unique @db.VarChar(100)
+  description String?    @db.Text
+  icon        String?    @db.VarChar(50)
+  parentId    String?    @map("parent_id") @db.Uuid
+  sortOrder   Int        @default(0) @map("sort_order")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+
+  parent    Category?      @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[]     @relation("CategoryTree")
+  books     BookCategory[]
+
+  @@map("categories")
+}
+
+model Book {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @db.VarChar(500)
+  slug        String   @unique @db.VarChar(500)
+  author      String?  @db.VarChar(300)
+  description String?  @db.Text
+  coverUrl    String?  @map("cover_url") @db.Text
+  pdfUrl      String?  @map("pdf_url") @db.Text
+  year        Int?
+  language    String?  @default("pt-BR") @db.VarChar(10)
+  pages       Int?
+  difficulty  String?  @default("intermediate") @db.VarChar(20)
+  ratingAvg   Decimal  @default(0) @map("rating_avg") @db.Decimal(3, 2)
+  ratingCount Int      @default(0) @map("rating_count")
+  createdById String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  creator    User?           @relation("BookCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  categories BookCategory[]
+  tags       BookTag[]
+  userBooks  UserBook[]
+  ratings    BookRating[]
+
+  @@map("books")
+}
+
+model BookCategory {
+  bookId     String   @map("book_id") @db.Uuid
+  categoryId String   @map("category_id") @db.Uuid
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, categoryId])
+  @@map("book_categories")
+}
+
+model Tag {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @unique @db.VarChar(100)
+  slug String @unique @db.VarChar(100)
+
+  books BookTag[]
+
+  @@map("tags")
+}
+
+model BookTag {
+  bookId String @map("book_id") @db.Uuid
+  tagId  String @map("tag_id") @db.Uuid
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, tagId])
+  @@map("book_tags")
+}
+
+model UserBook {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  bookId    String     @map("book_id") @db.Uuid
+  status    BookStatus @default(to_read)
+  progress  Decimal    @default(0) @db.Decimal(5, 2)
+  lastPage  Int        @default(1) @map("last_page")
+  bookmarked Boolean   @default(false)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@map("user_books")
+}
+
+model BookRating {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  bookId    String   @map("book_id") @db.Uuid
+  rating    Int      @db.SmallInt
+  review    String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@map("book_ratings")
+}
+
+model Community {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(200)
+  slug        String   @unique @db.VarChar(200)
+  description String?  @db.Text
+  bannerUrl   String?  @map("banner_url") @db.Text
+  rules       String?  @db.Text
+  createdById String?  @map("created_by") @db.Uuid
+  memberCount Int      @default(0) @map("member_count")
+  postCount   Int      @default(0) @map("post_count")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  creator       User?              @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  members       CommunityMember[]
+  posts         Post[]
+  rooms         Room[]
+  voiceChannels VoiceChannel[]
+
+  @@map("communities")
+}
+
+model CommunityMember {
+  communityId String   @map("community_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  role        String   @default("member") @db.VarChar(20)
+  joinedAt    DateTime @default(now()) @map("joined_at") @db.Timestamptz()
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([communityId, userId])
+  @@map("community_members")
+}
+
+model Post {
+  id          String     @id @default(uuid()) @db.Uuid
+  communityId String     @map("community_id") @db.Uuid
+  authorId    String?    @map("author_id") @db.Uuid
+  title       String     @db.VarChar(500)
+  slug        String     @db.VarChar(500)
+  body        String?    @db.Text
+  bodyHtml    String?    @map("body_html") @db.Text
+  images      String[]
+  links       String[]
+  status      PostStatus @default(published)
+  upvotes     Int        @default(0)
+  downvotes   Int        @default(0)
+  commentCount Int       @default(0) @map("comment_count")
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  comments  Comment[]
+
+  @@unique([communityId, slug])
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  authorId  String?  @map("author_id") @db.Uuid
+  parentId  String?  @map("parent_id") @db.Uuid
+  body      String   @db.Text
+  upvotes   Int      @default(0)
+  downvotes Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+model Vote {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  entityType String   @map("entity_type") @db.VarChar(20)
+  entityId   String   @map("entity_id") @db.Uuid
+  value      Int      @db.SmallInt
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@map("votes")
+}
+
+model Room {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  type        RoomType @default(public)
+  communityId String?  @map("community_id") @db.Uuid
+  createdById String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  community Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  creator   User?      @relation("RoomCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  members   RoomMember[]
+  messages  Message[]
+
+  @@map("rooms")
+}
+
+model RoomMember {
+  roomId    String   @map("room_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String   @default("member") @db.VarChar(20)
+  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamptz()
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, userId])
+  @@map("room_members")
+}
+
+model Message {
+  id        String    @id @default(uuid()) @db.Uuid
+  roomId    String    @map("room_id") @db.Uuid
+  authorId  String?   @map("author_id") @db.Uuid
+  parentId  String?   @map("parent_id") @db.Uuid
+  body      String    @db.Text
+  edited    Boolean   @default(false)
+  deleted   Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  room   Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  author User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent Message?  @relation("MessageReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies Message[] @relation("MessageReplies")
+
+  @@map("messages")
+}
+
+model VoiceChannel {
+  id          String   @id @default(uuid()) @db.Uuid
+  communityId String   @map("community_id") @db.Uuid
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  maxUsers    Int      @default(50) @map("max_users")
+  createdById String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  community Community      @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  creator   User?          @relation("VoiceChannelCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  sessions  VoiceSession[]
+
+  @@map("voice_channels")
+}
+
+model VoiceSession {
+  id        String    @id @default(uuid()) @db.Uuid
+  channelId String    @map("channel_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  joinedAt  DateTime  @default(now()) @map("joined_at") @db.Timestamptz()
+  leftAt    DateTime? @map("left_at") @db.Timestamptz()
+  muted     Boolean   @default(false)
+  deafened  Boolean   @default(false)
+
+  channel VoiceChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("voice_sessions")
+}
+
+model TarotCard {
+  id              String   @id @default(uuid()) @db.Uuid
+  name            String   @db.VarChar(100)
+  arcana          String   @db.VarChar(10)
+  suit            String?  @db.VarChar(20)
+  number          Int?
+  imageUrl        String?  @map("image_url") @db.Text
+  meaningUpright  String   @map("meaning_upright") @db.Text
+  meaningReversed String   @map("meaning_reversed") @db.Text
+  keywords        String[]
+  description     String?  @db.Text
+  sortOrder       Int      @default(0) @map("sort_order")
+
+  @@map("tarot_cards")
+}
+
+model TarotDraw {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @map("user_id") @db.Uuid
+  spreadType SpreadType @map("spread_type")
+  cards      Json       @db.JsonB
+  notes      String?    @db.Text
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tarot_draws")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String?  @map("entity_type") @db.VarChar(50)
+  entityId   String?  @map("entity_id") @db.Uuid
+  details    Json?    @db.JsonB
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+model Account {
+  id                String  @id @default(uuid()) @db.Uuid
+  userId            String  @map("user_id") @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  sessionToken String   @unique @map("session_token") @db.VarChar(255)
+  userId       String   @map("user_id") @db.Uuid
+  expires      DateTime @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz()
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String   @db.VarChar(50)
+  title     String   @db.VarChar(200)
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  link      String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}

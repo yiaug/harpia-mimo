@@ -1,65 +1,193 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Navigation } from '@/components/shared/navigation'
+import { Footer } from '@/components/shared/footer'
+import {
+  BookOpen,
+  MessageSquare,
+  Sparkles,
+  Hash,
+  ArrowRight,
+  Users,
+  Shield,
+  Globe,
+} from 'lucide-react'
 
-export default function Home() {
+const features = [
+  {
+    icon: BookOpen,
+    title: 'Biblioteca Digital',
+    description:
+      'Acesse uma coleção curada de livros sobre ocultismo, esoterismo e filosofia hermética. Leitor integrado com marcadores e progresso.',
+    href: '/biblioteca',
+  },
+  {
+    icon: MessageSquare,
+    title: 'Fórum de Discussão',
+    description:
+      'Participe de discussões organizadas por tradições e temas. Compartilhe conhecimento com a comunidade.',
+    href: '/forum',
+  },
+  {
+    icon: Sparkles,
+    title: 'Sistema de Tarô',
+    description:
+      'Realize tiragens tradicionais com todos os 78 arcanos. Sem inteligência artificial, apenas sabedoria ancestral.',
+    href: '/tarot',
+  },
+  {
+    icon: Hash,
+    title: 'Chat em Tempo Real',
+    description:
+      'Converse com outros estudantes em salas temáticas ou privadas. Chat de texto e voz integrados.',
+    href: '/chat',
+  },
+]
+
+const traditions = [
+  'Tarot',
+  'Alquimia',
+  'Cabala',
+  'Hermetismo',
+  'Astrologia',
+  'Magia Cerimonial',
+  'Gnosticismo',
+]
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="flex min-h-screen flex-col">
+      <Navigation />
+
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative overflow-hidden py-20 md:py-32">
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/10 via-transparent to-[var(--color-accent)]/10" />
+          <div className="container relative mx-auto px-4 text-center">
+            <Badge variant="secondary" className="mb-6">
+              Plataforma de Estudos Ocultistas
+            </Badge>
+            <h1 className="mb-6 text-4xl font-bold tracking-tight md:text-6xl">
+              Harpia
+            </h1>
+            <p className="mx-auto mb-8 max-w-2xl text-lg text-[var(--color-text-secondary)] md:text-xl">
+              Uma biblioteca digital, fórum de discussão e comunidade de estudos
+              dedicada ao ocultismo, esoterismo, filosofia hermética e tradições
+              ancestrais.
+            </p>
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+              <Button size="lg" asChild>
+                <Link href="/biblioteca">
+                  Explorar Biblioteca
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/register">Criar Conta Grátis</Link>
+              </Button>
+            </div>
+
+            <div className="mt-12 flex flex-wrap justify-center gap-2">
+              {traditions.map((tradition) => (
+                <Badge key={tradition} variant="outline">
+                  {tradition}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-20">
+          <div className="container mx-auto px-4">
+            <div className="mb-12 text-center">
+              <h2 className="mb-4 text-3xl font-bold">Recursos Principais</h2>
+              <p className="text-[var(--color-text-secondary)]">
+                Tudo que você precisa para seus estudos em um só lugar
+              </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {features.map((feature) => {
+                const Icon = feature.icon
+                return (
+                  <Link key={feature.title} href={feature.href}>
+                    <Card className="h-full transition-all hover:border-[var(--color-primary)] hover:shadow-[var(--color-primary)]/20">
+                      <CardHeader>
+                        <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-[var(--color-primary)]/10">
+                          <Icon className="h-6 w-6 text-[var(--color-primary)]" />
+                        </div>
+                        <CardTitle className="text-xl">{feature.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <CardDescription>{feature.description}</CardDescription>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Stats Section */}
+        <section className="border-y border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] py-20">
+          <div className="container mx-auto px-4">
+            <div className="grid gap-8 md:grid-cols-3">
+              <div className="text-center">
+                <div className="mb-2 flex justify-center">
+                  <BookOpen className="h-8 w-8 text-[var(--color-secondary)]" />
+                </div>
+                <div className="text-3xl font-bold">500+</div>
+                <div className="text-sm text-[var(--color-text-secondary)]">
+                  Livros Disponíveis
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="mb-2 flex justify-center">
+                  <Users className="h-8 w-8 text-[var(--color-secondary)]" />
+                </div>
+                <div className="text-3xl font-bold">10K+</div>
+                <div className="text-sm text-[var(--color-text-secondary)]">
+                  Estudantes Ativos
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="mb-2 flex justify-center">
+                  <Globe className="h-8 w-8 text-[var(--color-secondary)]" />
+                </div>
+                <div className="text-3xl font-bold">50K+</div>
+                <div className="text-sm text-[var(--color-text-secondary)]">
+                  Discussões
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20">
+          <div className="container mx-auto px-4 text-center">
+            <div className="mx-auto max-w-2xl">
+              <Shield className="mx-auto mb-6 h-12 w-12 text-[var(--color-primary)]" />
+              <h2 className="mb-4 text-3xl font-bold">Comece Sua Jornada</h2>
+              <p className="mb-8 text-[var(--color-text-secondary)]">
+                Junte-se a milhares de estudantes que já estão explorando os
+                mistérios do conhecimento oculto.
+              </p>
+              <Button size="lg" asChild>
+                <Link href="/register">
+                  Criar Conta Grátis
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <Footer />
     </div>
-  );
+  )
 }
