@@ -38,16 +38,16 @@
     "zod": "^4.4.3",
     "zustand": "^5.0.14",
     "tsx": "^4.22.4",
-    "@tailwindcss/postcss": "^4"
-  },
-  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "tailwindcss": "^4"
+  },
+  "devDependencies": {
     "dotenv": "^17.4.2",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "eslint-config-next": "16.2.9"
   }
 }
