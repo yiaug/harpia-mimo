@@ -12,7 +12,7 @@ services:
           name: harpia-db
           property: connectionString
       - key: AUTH_SECRET
-        generateValue: true
+        value: harpia-secret-chave-super-segura-2026-xk9m2p
       - key: NEXTAUTH_URL
         sync: false
         value: https://harpia.onrender.com
